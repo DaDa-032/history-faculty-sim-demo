@@ -23,6 +23,7 @@ const DEFAULT_ACTIONS = {
   SLACK_OFF: { cost: { time: 10 }, gain: { energy: 10, mood: 5, inspiration: 5 } }
 };
 
+
 async function safeJson(url, fallback){
   try{
     const r = await fetch(url);
@@ -31,6 +32,12 @@ async function safeJson(url, fallback){
   }catch{
     return fallback;
   }
+}
+
+// Resolve asset paths correctly under GitHub Pages (/<repo>/...) and other non-root deployments.
+function assetUrl(relPath){
+  // relPath should NOT start with a leading slash
+  return new URL(relPath, document.baseURI).toString();
 }
 
 function baseCfg(){
@@ -49,20 +56,20 @@ export async function loadContent(){
   if (CONTENT) return CONTENT;
 
   const [school, good, mid, bad, randomAll, base, actions, projects, fixedFall, fixedWinter, fixedSpring, fixedSummer] = await Promise.all([
-    safeJson("./content/schools/lipu.json", null),
-    safeJson("./content/events/random.good.json", []),
-    safeJson("./content/events/random.mid.json", []),
-    safeJson("./content/events/random.bad.json", []),
-    safeJson("./content/events/random/events.json", null),
-    safeJson("./content/rules/base.json", DEFAULT_BASE),
-    safeJson("./content/actions/actions.json", DEFAULT_ACTIONS),
-    safeJson("./content/projects/projects.json", null),
+    safeJson(assetUrl("content/schools/lipu.json"), null),
+    safeJson(assetUrl("content/events/random.good.json"), []),
+    safeJson(assetUrl("content/events/random.mid.json"), []),
+    safeJson(assetUrl("content/events/random.bad.json"), []),
+    safeJson(assetUrl("content/events/random/events.json"), null),
+    safeJson(assetUrl("content/rules/base.json"), DEFAULT_BASE),
+    safeJson(assetUrl("content/actions/actions.json"), DEFAULT_ACTIONS),
+    safeJson(assetUrl("content/projects/projects.json"), null),
 
     // Step B: fixed event panels (data-driven UI)
-    safeJson("./content/events/fixed/fall.json", null),
-    safeJson("./content/events/fixed/winter.json", null),
-    safeJson("./content/events/fixed/spring.json", null),
-    safeJson("./content/events/fixed/summer.json", null),
+    safeJson(assetUrl("content/events/fixed/fall.json"), null),
+    safeJson(assetUrl("content/events/fixed/winter.json"), null),
+    safeJson(assetUrl("content/events/fixed/spring.json"), null),
+    safeJson(assetUrl("content/events/fixed/summer.json"), null),
   ]);
 
   CONTENT = {
