@@ -1,0 +1,426 @@
+/* =========================
+   OA Skin: Notion + 压迫感
+   ========================= */
+
+.oa.skin-notion{
+  /* Theme tokens */
+  --bg: #f6f7f8;
+  --paper: #ffffff;
+  --ink: #111827;
+  --muted: #6b7280;
+  --line: #e5e7eb;
+  --line-strong: #d1d5db;
+
+  --danger: #b91c1c;
+  --warn: #b45309;
+  --ok: #047857;
+
+  --shadow: 0 1px 0 rgba(17,24,39,.06), 0 12px 36px rgba(17,24,39,.10);
+  --shadow-soft: 0 1px 0 rgba(17,24,39,.05), 0 10px 24px rgba(17,24,39,.08);
+  --radius: 14px;
+  --radius-sm: 10px;
+  --pad: 14px;
+
+  /* Base */
+  min-height: 100vh;
+  color: var(--ink);
+  background:
+    radial-gradient(900px 420px at 18% -10%, rgba(17,24,39,.10), transparent 60%),
+    radial-gradient(900px 420px at 82% -10%, rgba(17,24,39,.08), transparent 60%),
+    linear-gradient(180deg, rgba(255,255,255,.65), rgba(255,255,255,0) 38%),
+    var(--bg);
+  background-attachment: fixed;
+
+  font-family: ui-sans-serif, system-ui, -apple-system, "SF Pro Text", "Segoe UI",
+               Roboto, "Helvetica Neue", Arial, "Noto Sans", "Apple Color Emoji",
+               "Segoe UI Emoji";
+  letter-spacing: .2px;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+
+  padding: 22px 18px 40px;
+}
+
+@media (min-width: 920px){
+  .oa.skin-notion{ padding: 26px 0 48px; }
+  .oa.skin-notion #app{ width: 860px; margin: 0 auto; }
+}
+
+/* Phase atmosphere */
+.oa.skin-notion.phase-event{
+  background:
+    radial-gradient(1200px 320px at 10% 0%, rgba(59,130,246,.10), transparent 60%),
+    radial-gradient(900px 360px at 80% 5%, rgba(99,102,241,.10), transparent 55%),
+    var(--bg);
+}
+.oa.skin-notion.phase-action{
+  background:
+    radial-gradient(1100px 360px at 20% 0%, rgba(245,158,11,.10), transparent 60%),
+    radial-gradient(900px 360px at 85% 8%, rgba(239,68,68,.08), transparent 55%),
+    var(--bg);
+}
+.oa.skin-notion.screen-end{
+  background:
+    radial-gradient(900px 380px at 40% 0%, rgba(239,68,68,.18), transparent 60%),
+    #0b1220;
+  color: #e5e7eb;
+}
+
+/* Headings */
+.oa.skin-notion h1{ font-size: 26px; font-weight: 1000; margin: 6px 0 10px; letter-spacing: .4px; }
+.oa.skin-notion h2{ font-size: 20px; font-weight: 1000; margin: 10px 0 8px; }
+.oa.skin-notion h3{ font-size: 16px; font-weight: 1000; margin: 0 0 8px; color: var(--ink); }
+
+/* Utility */
+.oa.skin-notion .muted{ color: var(--muted); font-size: 16px; line-height: 1.5; }
+.oa.skin-notion .hr{ height: 1px; background: var(--line); margin: 10px 0; }
+
+/* Layout */
+.oa.skin-notion .twoCol{
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 12px;
+}
+@media (min-width: 760px){
+  .oa.skin-notion .twoCol{ grid-template-columns: 1fr 1fr; gap: 16px; }
+}
+
+/* Panels (Notion card +制度色条) */
+.oa.skin-notion .panel{
+  position: relative;
+  background: var(--paper);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  padding: var(--pad);
+  box-shadow: var(--shadow);
+  margin: 14px 0;
+}
+.oa.skin-notion .panel:before{
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 12px;
+  bottom: 12px;
+  width: 4px;
+  border-radius: 999px;
+  background: rgba(17,24,39,.16);
+}
+.oa.skin-notion.phase-event .panel:before{ background: rgba(59,130,246,.38); }
+.oa.skin-notion.phase-action .panel:before{ background: rgba(245,158,11,.42); }
+.oa.skin-notion.screen-end .panel:before{ background: rgba(239,68,68,.55); }
+
+/* Old panels that still render the section title as `.muted` (e.g., 菜单) */
+.oa.skin-notion .panel > .muted:first-child{
+  font-size: 16px;
+  letter-spacing: .3px;
+  text-transform: none;
+  font-weight: 900;
+  color: var(--ink);
+}
+
+/* New section titles from ui.js (成果/回合) */
+.oa.skin-notion .sectionTitle{
+  font-size: 16px;
+  letter-spacing: .3px;
+  text-transform: none;
+  font-weight: 900;
+  color: var(--ink);
+}
+
+/* 主界面：成果/回合两列正文统一字号 */
+.oa.skin-notion.screen-main .twoCol > .panel > div:not(.hr):not(.sectionTitle){
+  font-size: 20px;
+  line-height: 1.75;
+}
+
+/* Stats */
+.oa.skin-notion .stats{
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+  margin: 10px 0 12px;
+}
+@media (min-width: 760px){
+  .oa.skin-notion .stats{ grid-template-columns: repeat(4, minmax(0, 1fr)); }
+}
+
+/* Sticky top bar on main/event/action etc. */
+.oa.skin-notion.screen-main .stats,
+.oa.skin-notion.screen-event .stats,
+.oa.skin-notion.screen-action .stats,
+.oa.skin-notion.screen-papers .stats,
+.oa.skin-notion.screen-requirements .stats{
+  position: sticky;
+  top: 10px;
+  z-index: 30;
+  padding: 10px;
+  border-radius: 16px;
+  background: rgba(255,255,255,.78);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(17,24,39,.10);
+  box-shadow: var(--shadow-soft);
+}
+
+.oa.skin-notion .stat{
+  background: var(--paper);
+  border: 1px solid rgba(17,24,39,.10);
+  border-radius: var(--radius-sm);
+  padding: 12px 14px;
+  box-shadow: none;
+  position: relative;
+  overflow: hidden;
+}
+.oa.skin-notion .stat:before{
+  content:"";
+  position:absolute;
+  inset:0 0 auto 0;
+  height: 4px;
+  background: linear-gradient(90deg, rgba(17,24,39,.55), rgba(17,24,39,.10));
+}
+.oa.skin-notion .stat b{ display: block; font-size: 20px; margin-top: 4px; }
+
+/* Tag */
+.oa.skin-notion .tag{
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 16px;
+  padding: 3px 8px;
+  border-radius: 999px;
+  border: 1px solid var(--line-strong);
+  background: #f9fafb;
+  color: var(--ink);
+}
+
+/* Table */
+.oa.skin-notion .table{
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0;
+  overflow: hidden;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--paper);
+}
+.oa.skin-notion .table thead th{
+  font-size: 16px;
+  text-align: left;
+  color: var(--ink);
+  background: #f3f4f6;
+  border-bottom: 1px solid var(--line);
+  padding: 10px 12px;
+}
+.oa.skin-notion .table tbody td{
+  padding: 10px 12px;
+  border-bottom: 1px solid var(--line);
+  font-size: 16px;
+}
+.oa.skin-notion .table tbody tr:last-child td{ border-bottom: none; }
+.oa.skin-notion .table tbody tr:hover td{ background: rgba(17,24,39,.03); }
+
+/* Inputs */
+.oa.skin-notion input[type="number"],
+.oa.skin-notion select{
+  padding: 8px 10px;
+  border: 1px solid var(--line-strong);
+  border-radius: 10px;
+  background: #fff;
+  outline: none;
+}
+.oa.skin-notion input[type="number"]:focus,
+.oa.skin-notion select:focus{
+  border-color: rgba(17,24,39,.45);
+  box-shadow: 0 0 0 3px rgba(17,24,39,.08);
+}
+
+/* Buttons */
+.oa.skin-notion .btns{ display: flex; flex-wrap: wrap; gap: 10px; margin-top: 8px; }
+.oa.skin-notion button{
+  appearance: none;
+  border: 1px solid var(--line-strong);
+  background: #fff;
+  color: var(--ink);
+  border-radius: 12px;
+  padding: 9px 12px;
+  font-size: 16px;
+  font-weight: 800;
+  cursor: pointer;
+  box-shadow: 0 1px 0 rgba(17,24,39,.06);
+  transition: transform .06s ease, box-shadow .12s ease, border-color .12s ease, opacity .12s ease;
+}
+.oa.skin-notion button:hover{
+  border-color: rgba(17,24,39,.28);
+  box-shadow: 0 1px 0 rgba(17,24,39,.06), 0 10px 20px rgba(17,24,39,.08);
+  transform: translateY(-1px);
+}
+.oa.skin-notion button:active{ transform: translateY(0px); box-shadow: 0 1px 0 rgba(17,24,39,.06); }
+.oa.skin-notion button:disabled{ opacity: .45; cursor: not-allowed; transform: none; }
+
+/* Primary / critical buttons (IDs come from ui.js) */
+.oa.skin-notion #btnGoAction,
+.oa.skin-notion #btnToAction,
+.oa.skin-notion #btnEndTurn,
+.oa.skin-notion #btnRandom,
+.oa.skin-notion #btnPaperSubmit,
+.oa.skin-notion #btnChooseSchool,
+.oa.skin-notion #btnConfirmSkills,
+.oa.skin-notion #btnStart{
+  border-color: rgba(17,24,39,.18);
+  background: linear-gradient(180deg, #111827, #0b1220);
+  color: #f9fafb;
+  box-shadow: 0 1px 0 rgba(0,0,0,.20), 0 12px 24px rgba(0,0,0,.18);
+}
+.oa.skin-notion #btnGoAction:hover,
+.oa.skin-notion #btnToAction:hover,
+.oa.skin-notion #btnEndTurn:hover,
+.oa.skin-notion #btnRandom:hover,
+.oa.skin-notion #btnPaperSubmit:hover,
+.oa.skin-notion #btnChooseSchool:hover,
+.oa.skin-notion #btnConfirmSkills:hover,
+.oa.skin-notion #btnStart:hover{
+  border-color: rgba(255,255,255,.18);
+  box-shadow: 0 1px 0 rgba(0,0,0,.22), 0 18px 30px rgba(0,0,0,.22);
+}
+.oa.skin-notion #btnEndTurn{
+  background: linear-gradient(180deg, rgba(185,28,28,1), rgba(127,29,29,1));
+}
+
+/* Secondary nav buttons (back to main, etc.) */
+.oa.skin-notion #btnPapers,
+.oa.skin-notion #btnReq,
+.oa.skin-notion [id^="btnBackMain"]{
+  background: #f3f4f6;
+}
+
+/* Log – 方案一（档案审计） */
+.oa.skin-notion .log{
+  margin-top: 12px;
+  background: linear-gradient(180deg, #ffffff, #f9fafb);
+  color: var(--ink);
+  border-radius: calc(var(--radius) + 2px);
+  border: 1px solid rgba(17,24,39,.10);
+  box-shadow: var(--shadow-soft);
+  padding: 10px;
+  max-height: 280px;
+  overflow: auto;
+  font-size: 16px;
+  line-height: 1.6;
+  counter-reset: logline;
+}
+.oa.skin-notion .log > div{
+  position: relative;
+  padding: 10px 10px 10px 46px;
+  border-bottom: 1px dashed rgba(17,24,39,.10);
+}
+.oa.skin-notion .log > div:last-child{ border-bottom: none; background: rgba(17,24,39,.02); }
+.oa.skin-notion .log > div:before{
+  counter-increment: logline;
+  content: counter(logline);
+  position: absolute;
+  left: 10px;
+  top: 10px;
+  width: 26px;
+  height: 18px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 16px;
+  font-weight: 1000;
+  color: rgba(17,24,39,.72);
+  background: rgba(17,24,39,.06);
+  border: 1px solid rgba(17,24,39,.10);
+  border-radius: 8px;
+}
+.oa.skin-notion .log > div:after{
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 10px;
+  bottom: 10px;
+  width: 3px;
+  border-radius: 999px;
+  background: rgba(17,24,39,.18);
+}
+.oa.skin-notion.phase-event .log > div:after{ background: rgba(59,130,246,.38); }
+.oa.skin-notion.phase-action .log > div:after{ background: rgba(245,158,11,.42); }
+
+/* End screen cards */
+.oa.skin-notion.screen-end .panel{
+  background: rgba(255,255,255,.06);
+  border-color: rgba(255,255,255,.12);
+  color: #e5e7eb;
+}
+.oa.skin-notion.screen-end .muted{ color: rgba(229,231,235,.75); }
+.oa.skin-notion.screen-end button{
+  background: rgba(255,255,255,.08);
+  border-color: rgba(255,255,255,.16);
+  color: #e5e7eb;
+}
+
+/* End screen log – 方案二（时间轴） */
+.oa.skin-notion.screen-end .log{
+  margin-top: 14px;
+  background: transparent;
+  border: none;
+  box-shadow: none;
+  padding: 0;
+  max-height: none;
+  overflow: visible;
+  counter-reset: none;
+}
+.oa.skin-notion.screen-end .log > div{
+  position: relative;
+  margin: 0 0 10px 18px;
+  padding: 10px 12px;
+  border-radius: 14px;
+  border: 1px solid rgba(255,255,255,.12);
+  background: rgba(255,255,255,.06);
+  color: #e5e7eb;
+}
+.oa.skin-notion.screen-end .log > div:after{
+  content: "";
+  position: absolute;
+  left: -18px;
+  top: -10px;
+  bottom: -10px;
+  width: 2px;
+  background: rgba(255,255,255,.10);
+}
+.oa.skin-notion.screen-end .log > div:before{
+  content: "";
+  position: absolute;
+  left: -23px;
+  top: 14px;
+  width: 12px;
+  height: 12px;
+  border-radius: 999px;
+  background: rgba(239,68,68,.55);
+  box-shadow: 0 0 0 3px rgba(239,68,68,.16);
+}
+.oa.skin-notion.screen-end .log > div:last-child{
+  border-color: rgba(239,68,68,.35);
+  background: rgba(239,68,68,.10);
+}
+
+/* ===== Log keyword highlight ===== */
+.oa.skin-notion .kw{
+  display: inline-flex;
+  align-items: center;
+  padding: 1px 7px;
+  border-radius: 999px;
+  font-weight: 800;
+  letter-spacing: .2px;
+  border: 1px solid rgba(17,24,39,.12);
+  background: rgba(17,24,39,.04);
+  color: rgba(17,24,39,.92);
+}
+.oa.skin-notion .kw-fail{ background: rgba(185,28,28,.10); border-color: rgba(185,28,28,.22); color: rgba(185,28,28,1); }
+.oa.skin-notion .kw-success{ background: rgba(4,120,87,.12); border-color: rgba(4,120,87,.20); color: rgba(4,120,87,1); }
+.oa.skin-notion .kw-paper{ background: rgba(59,130,246,.12); border-color: rgba(59,130,246,.22); color: rgba(29,78,216,1); }
+.oa.skin-notion .kw-project{ background: rgba(245,158,11,.16); border-color: rgba(245,158,11,.22); color: rgba(180,83,9,1); }
+
+.oa.skin-notion.screen-end .kw{ background: rgba(255,255,255,.08); border-color: rgba(255,255,255,.14); color: #e5e7eb; }
+.oa.skin-notion.screen-end .kw-fail{ background: rgba(239,68,68,.18); border-color: rgba(239,68,68,.28); }
+.oa.skin-notion.screen-end .kw-success{ background: rgba(16,185,129,.16); border-color: rgba(16,185,129,.24); }
+.oa.skin-notion.screen-end .kw-paper{ background: rgba(96,165,250,.16); border-color: rgba(96,165,250,.24); }
+.oa.skin-notion.screen-end .kw-project{ background: rgba(251,191,36,.16); border-color: rgba(251,191,36,.24); }

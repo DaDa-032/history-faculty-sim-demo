@@ -1,0 +1,29 @@
+{
+  "turns": {
+    "terms": ["第一学期", "寒假", "第二学期", "暑假"],
+
+    "randomQuotaByTerm": {
+      "0": 5,
+      "1": 2,
+      "2": 5,
+      "3": 3
+    },
+
+    "timeResetEndTurn": 100,
+
+    "recoveryEndOfTerm": {
+      "1": {
+        "mood": 50,
+        "energy": 50
+      },
+      "3": {
+        "mood": 50,
+        "energy": 50
+      }
+    }
+  },
+
+  "rules": {
+    "mustClearRandomBeforeLeavingEventStage": true
+  }
+}

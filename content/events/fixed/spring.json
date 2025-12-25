@@ -1,0 +1,64 @@
+{
+  "id": "fixed_spring",
+  "title": "第二学期：固定事件",
+  "blocks": [
+    {
+      "id": "teach_spring",
+      "kind": "counter",
+      "title": "开课",
+      "desc": "选择本学期开几门课（0-4）。每门课：心态-36，时间-18，精力-36；领导满意度+1；计入本学年授课数。",
+      "min": 0,
+      "max": 4,
+      "actionId": "FP_TEACH_SPRING",
+      "log": "开课",
+      "effects": [
+        { "kind": "stat", "stat": "mood", "delta": -36 },
+        { "kind": "stat", "stat": "time", "delta": -18 },
+        { "kind": "stat", "stat": "energy", "delta": -36 },
+        { "kind": "result", "key": "leader", "delta": 1 },
+        { "kind": "counter", "key": "teachingThisYear", "delta": 1 }
+      ]
+    },
+    {
+      "id": "conf_spring",
+      "kind": "counter",
+      "title": "参加学术会议",
+      "desc": "选择本学期参会次数（0-4）。每次：时间-2，精力-2，灵感+10。",
+      "min": 0,
+      "max": 4,
+      "actionId": "FP_CONF_SPRING",
+      "log": "参会",
+      "effects": [
+        { "kind": "stat", "stat": "time", "delta": -2 },
+        { "kind": "stat", "stat": "energy", "delta": -2 },
+        { "kind": "stat", "stat": "inspiration", "delta": 10 }
+      ]
+    },
+    {
+      "id": "advise_spring",
+      "kind": "counter",
+      "title": "指导本科毕业论文",
+      "desc": "选择指导数量（0-2）。每篇：心态-5，时间-5，精力-5；领导满意度+1。",
+      "min": 0,
+      "max": 2,
+      "actionId": "FP_ADVISE_SPRING",
+      "log": "指导毕设",
+      "effects": [
+        { "kind": "stat", "stat": "mood", "delta": -5 },
+        { "kind": "stat", "stat": "time", "delta": -5 },
+        { "kind": "stat", "stat": "energy", "delta": -5 },
+        { "kind": "result", "key": "leader", "delta": 1 }
+      ]
+    },
+    {
+      "id": "ack_spring",
+      "kind": "button",
+      "title": "确认：本学期固定事项已处理",
+      "desc": "如果你本学期不打算开课/参会/指导，也需要点一次确认。",
+      "actionId": "FP_ACK_SPRING",
+      "label": "确认",
+      "log": "固定事项确认",
+      "effects": []
+    }
+  ]
+}

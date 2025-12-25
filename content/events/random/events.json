@@ -1,0 +1,110 @@
+{
+  "version": 1,
+  "events": [
+    {
+      "id": "pos_coauthor",
+      "title": "天降合作者",
+      "text": "你在群里随口一句，竟引来一位大佬主动说：要不要一起写？",
+      "tags": ["positive"],
+      "weight": 10,
+      "maxPerRun": 2,
+      "maxPerTerm": 1,
+      "effects": [
+        { "kind": "stat", "stat": "mood", "delta": 12 },
+        { "kind": "stat", "stat": "inspiration", "delta": 18 },
+        { "kind": "result", "key": "leader", "delta": 1 }
+      ]
+    },
+    {
+      "id": "pos_archive_find",
+      "title": "档案馆彩蛋",
+      "text": "你翻到一份边角材料，刚好能补上论文最关键的一段论证。",
+      "tags": ["positive"],
+      "weight": 9,
+      "maxPerRun": 3,
+      "maxPerTerm": 1,
+      "effects": [
+        { "kind": "stat", "stat": "inspiration", "delta": 30 },
+        { "kind": "stat", "stat": "time", "delta": -6 }
+      ]
+    },
+    {
+      "id": "pos_student_thanks",
+      "title": "学生的感谢",
+      "text": "你收到一封真诚邮件：老师这门课让我觉得历史活过来了。",
+      "tags": ["positive"],
+      "weight": 8,
+      "maxPerRun": 2,
+      "maxPerTerm": 1,
+      "effects": [
+        { "kind": "stat", "stat": "mood", "delta": 20 },
+        { "kind": "result", "key": "leader", "delta": 1 }
+      ]
+    },
+    {
+      "id": "neu_admin_meeting",
+      "title": "临时行政会",
+      "text": "会议内容很空，但不去不行。",
+      "tags": ["neutral"],
+      "weight": 10,
+      "maxPerRun": 6,
+      "maxPerTerm": 2,
+      "effects": [
+        { "kind": "stat", "stat": "time", "delta": -10 },
+        { "kind": "stat", "stat": "energy", "delta": -6 }
+      ]
+    },
+    {
+      "id": "neu_peer_review",
+      "title": "审稿邀请",
+      "text": "期刊发来审稿邀请：三天内返回意见。你内心一紧。",
+      "tags": ["neutral"],
+      "weight": 9,
+      "maxPerRun": 6,
+      "maxPerTerm": 2,
+      "effects": [
+        { "kind": "stat", "stat": "time", "delta": -8 },
+        { "kind": "stat", "stat": "mood", "delta": -6 }
+      ]
+    },
+    {
+      "id": "neg_wx_drama",
+      "title": "微信群大战",
+      "text": "你只是想潜水，但信息像海啸一样涌来。",
+      "tags": ["negative"],
+      "weight": 10,
+      "maxPerRun": 6,
+      "maxPerTerm": 2,
+      "effects": [
+        { "kind": "stat", "stat": "mood", "delta": -14 },
+        { "kind": "stat", "stat": "time", "delta": -10 }
+      ]
+    },
+    {
+      "id": "neg_minor_illness",
+      "title": "小感冒",
+      "text": "你觉得没事，但身体不同意。",
+      "tags": ["negative"],
+      "weight": 8,
+      "maxPerRun": 3,
+      "maxPerTerm": 1,
+      "effects": [
+        { "kind": "stat", "stat": "energy", "delta": -18 },
+        { "kind": "stat", "stat": "mood", "delta": -8 }
+      ]
+    },
+    {
+      "id": "neg_printer_dead",
+      "title": "打印机阵亡",
+      "text": "它在你最需要它的时候决定退休。",
+      "tags": ["negative"],
+      "weight": 7,
+      "maxPerRun": 4,
+      "maxPerTerm": 1,
+      "effects": [
+        { "kind": "stat", "stat": "time", "delta": -12 },
+        { "kind": "stat", "stat": "mood", "delta": -10 }
+      ]
+    }
+  ]
+}

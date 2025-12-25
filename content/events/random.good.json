@@ -1,0 +1,33 @@
+[
+  {
+    "id": "good_shower_inspiration",
+    "text": "随机事件（好运）：洗澡灵感——突然想通一个问题。",
+    "effects": [
+      { "stat": "inspiration", "delta": 20 },
+      { "stat": "energy", "delta": -5 }
+    ]
+  },
+  {
+    "id": "good_encouraged",
+    "text": "随机事件（好运）：导师来电——被鼓励并顺带抬了一手。",
+    "effects": [
+      { "stat": "mood", "delta": 10 }
+    ]
+  },
+  {
+    "id": "good_healthcheck_ok",
+    "text": "随机事件（好运）：体检报告——指标不错，信心倍增。",
+    "effects": [
+      { "stat": "energy", "delta": 10 }
+    ]
+  },
+  {
+    "id": "good_material_pack",
+    "text": "随机事件（好运）：同事转发一份神仙资料包。",
+    "effects": [
+      { "stat": "time", "delta": -5 },
+      { "stat": "inspiration", "delta": 15 },
+      { "stat": "mood", "delta": 5 }
+    ]
+  }
+]

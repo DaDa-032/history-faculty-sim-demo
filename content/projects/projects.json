@@ -1,0 +1,41 @@
+{
+  "version": 1,
+  "projects": [
+    {
+      "id": "national_nssfc",
+      "name": "国家社科基金",
+      "tier": "national",
+      "submitCost": [
+        { "kind": "stat", "stat": "time", "delta": -5 },
+        { "kind": "stat", "stat": "energy", "delta": -5 }
+      ],
+      "resolveAt": { "term": "summer", "phase": "event" },
+      "successRate": 0.25,
+      "onSuccess": [
+        { "kind": "result", "key": "national", "delta": 1 }
+      ],
+      "onFail": [],
+      "unique": true
+    },
+    {
+      "id": "provincial",
+      "name": "省部级项目",
+      "tier": "provincial",
+      "submitCost": [
+        { "kind": "stat", "stat": "time", "delta": -5 },
+        { "kind": "stat", "stat": "energy", "delta": -5 }
+      ],
+      "resolveAt": { "term": "summer", "phase": "action" },
+      "successRate": 0.25,
+      "onSuccess": [
+        { "kind": "result", "key": "provincial", "delta": 1 }
+      ],
+      "onFail": [],
+      "unique": true
+    }
+  ],
+  "rules": {
+    "maxOneSuccessPerRun": true,
+    "preferNationalOverProvincial": false
+  }
+}
