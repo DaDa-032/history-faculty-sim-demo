@@ -1,0 +1,17 @@
+{
+  "id": "summer",
+  "title": "暑假固定事件",
+  "blocks": [
+    {
+      "id": "apply_provincial_project",
+      "kind": "button",
+      "title": "申请省部级科研项目",
+      "desc": "准备并提交省部级项目申请（结果将于暑假行动阶段公布）。",
+      "label": "提交申请",
+      "actionId": "PROJECT_SUBMIT",
+      "payload": {
+        "projectId": "provincial"
+      }
+    }
+  ]
+}

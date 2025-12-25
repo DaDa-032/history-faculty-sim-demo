@@ -1,0 +1,30 @@
+[
+  {
+    "id": "mid_wechat_scroll",
+    "text": "随机事件（中性）：微信群刷屏——你忍不住围观。",
+    "effects": [
+      { "stat": "time", "delta": -10 },
+      { "stat": "mood", "delta": 5 }
+    ]
+  },
+  {
+    "id": "mid_small_form",
+    "text": "随机事件（中性）：行政小表格——填一填就过去了。",
+    "effects": [
+      { "stat": "time", "delta": -5 }
+    ]
+  },
+  {
+    "id": "mid_nothing",
+    "text": "随机事件（中性）：无事发生。你甚至有点不习惯。",
+    "effects": []
+  },
+  {
+    "id": "mid_lit_sort",
+    "text": "随机事件（中性）：随手整理文献——小有收获。",
+    "effects": [
+      { "stat": "time", "delta": -5 },
+      { "stat": "inspiration", "delta": 5 }
+    ]
+  }
+]

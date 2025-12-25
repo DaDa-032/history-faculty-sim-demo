@@ -1,0 +1,40 @@
+[
+  {
+    "id": "bad_sys_maintenance",
+    "text": "随机事件（霉运）：系统维护通知——你忘了提前提交材料。",
+    "effects": [
+      { "stat": "time", "delta": -15 },
+      { "stat": "mood", "delta": -10 }
+    ]
+  },
+  {
+    "id": "bad_printer",
+    "text": "随机事件（霉运）：打印机坏了——偏偏在最忙的时候。",
+    "effects": [
+      { "stat": "time", "delta": -5 },
+      { "stat": "mood", "delta": -5 }
+    ]
+  },
+  {
+    "id": "bad_progress_call",
+    "text": "随机事件（霉运）：导师来电——被追问进展。",
+    "effects": [
+      { "stat": "mood", "delta": -5 }
+    ]
+  },
+  {
+    "id": "bad_healthcheck_warn",
+    "text": "随机事件（霉运）：体检报告——医生建议少熬夜。",
+    "effects": [
+      { "stat": "energy", "delta": -15 }
+    ]
+  },
+  {
+    "id": "bad_emergency_meeting",
+    "text": "随机事件（霉运）：临时会议——你被按头参会。",
+    "effects": [
+      { "stat": "time", "delta": -10 },
+      { "stat": "energy", "delta": -10 }
+    ]
+  }
+]

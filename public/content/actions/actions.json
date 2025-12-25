@@ -1,0 +1,31 @@
+{
+  "WRITE_PAPER": {
+    "cost": {
+      "mood": 10,
+      "time": 20,
+      "energy": 20
+    },
+    "draftClicksPerDraft": 3
+  },
+
+  "PREP_CLASS": {
+    "cost": {
+      "mood": 9,
+      "time": 9
+    },
+    "gain": {
+      "mood": 3
+    }
+  },
+
+  "SLACK_OFF": {
+    "cost": {
+      "time": 10
+    },
+    "gain": {
+      "energy": 10,
+      "mood": 5,
+      "inspiration": 5
+    }
+  }
+}

@@ -1,0 +1,10 @@
+{
+  "id": "lipu",
+  "name": "李普大学",
+  "tenure": {
+    "maxYear": 6,
+    "teachPerYear": 2,
+    "paperNeed": 6,
+    "projectMode": "either"
+  }
+}
