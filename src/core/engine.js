@@ -90,7 +90,8 @@ export async function loadContent(){
 }
 
 export function logPush(state, msg){
-  state.log.unshift(`[Y${state.time.year}-${termName(state.time.term)}-${state.time.phase}] ${msg}`);
+  const phase = ({ event: "事件阶段", action: "行动阶段" }[state.time.phase] ?? state.time.phase);
+  state.log.unshift(`[Y${state.time.year}-${termName(state.time.term)}-${phase}] ${msg}`);
   state.log = state.log.slice(0, 200);
 }
 
@@ -130,6 +131,33 @@ export function canAfford(state, cost){
     if (state.stats[k] < v) return false;
   }
   return true;
+}
+
+export function getInsufficientStats(state, cost){
+  const lacks = [];
+  for (const [k, v] of Object.entries(cost || {})){
+    const need = Number(v) || 0;
+    const have = Number(state?.stats?.[k] ?? 0);
+    if (have < need){
+      lacks.push({ key: k, need, have });
+    }
+  }
+  return lacks;
+}
+
+function reasonStat(k){
+  return ({
+    mood: "心态崩了",
+    energy: "精力耗尽",
+    time: "没时间了",
+    inspiration: "灵感枯竭"
+  }[k] ?? `${labelStat(k)}不足`);
+}
+
+function formatInsufficient(state, cost){
+  const lacks = getInsufficientStats(state, cost);
+  if (!lacks.length) return "状态不足";
+  return lacks.map(x => reasonStat(x.key)).join("，");
 }
 
 export function spend(state, cost){
@@ -222,6 +250,55 @@ export function quotaForTerm(term){
 function hasFixedPanelForTerm(termIdx){
   const p = CONTENT?.fixedPanels?.[String(termIdx)];
   return !!(p && Array.isArray(p.blocks) && p.blocks.length > 0);
+}
+
+// Helper: compute whether player can leave event stage and the UI suffix
+function eventStageLeaveInfo(state){
+  const needFixed = hasFixedPanelForTerm(state.time.term);
+  const mustDoFixed = needFixed && !state.fixedDone;
+  const mustClearRandom = state.randomQuota > 0;
+  const canLeaveEvent = (!mustClearRandom) && (!mustDoFixed);
+  const suffix = [
+    mustDoFixed ? "需先处理固定事件" : null,
+    mustClearRandom ? "需先触发完随机事件" : null
+  ].filter(Boolean).join("；");
+  return { needFixed, mustDoFixed, mustClearRandom, canLeaveEvent, suffix };
+}
+
+// Helper: auto-complete winter/summer project fixed panel if already has (or pending) project
+function autoCompleteProjectFixedIfNotNeeded(state){
+  // Only relevant in event phase terms that have the project application fixed panel.
+  if (state.time?.phase !== "event") return;
+  const term = state.time?.term;
+  if (term !== 1 && term !== 3) return; // winter / summer only
+
+  migrateLegacyPending(state);
+  ensurePendingProjects(state);
+
+  // Winter: national application panel. If already has national OR already pending national, treat as handled.
+  if (term === 1){
+    const hasNational = (state.results?.national || 0) >= 1;
+    const pendingNational = !!(state.pendingProjects?.national_nssfc || state.pending?.national);
+    if (hasNational || pendingNational){
+      state.fixedDone = true;
+      state.fixedChoices = state.fixedChoices || {};
+      state.fixedChoices.auto = hasNational ? "已具备国家项目" : "国家项目已提交";
+    }
+    return;
+  }
+
+  // Summer: provincial application panel. If already has provincial OR pending provincial OR already has national (rule blocks provincial), treat as handled.
+  if (term === 3){
+    const hasProv = (state.results?.provincial || 0) >= 1;
+    const pendingProv = !!(state.pendingProjects?.provincial || state.pending?.provincial);
+    const hasNational = (state.results?.national || 0) >= 1;
+    if (hasProv || pendingProv || hasNational){
+      state.fixedDone = true;
+      state.fixedChoices = state.fixedChoices || {};
+      state.fixedChoices.auto = hasProv ? "已具备省部级项目"
+        : (pendingProv ? "省部级项目已提交" : "已有国家项目（无需再申省部级）");
+    }
+  }
 }
 
 /** luck scheme A: choose good/mid/bad pool by luck */
@@ -416,9 +493,7 @@ export function getAvailableActions(state){
   }
 
   if (screen === "event"){
-    const needFixed = hasFixedPanelForTerm(state.time.term);
-    const mustClearRandom = state.randomQuota > 0;
-    const mustDoFixed = needFixed && !state.fixedDone;
+    const { canLeaveEvent, suffix } = eventStageLeaveInfo(state);
 
     a.push({ id:"DO_FIXED", label:"执行固定事件面板（在 UI 里点）", enabled:false });
 
@@ -427,13 +502,6 @@ export function getAvailableActions(state){
       label: `触发随机事件（剩余${state.randomQuota}）`,
       enabled: state.randomQuota > 0
     });
-
-    const canLeaveEvent = (!mustClearRandom) && (!mustDoFixed);
-
-    const suffix = [
-      mustDoFixed ? "需先处理固定事件" : null,
-      mustClearRandom ? "需先触发完随机事件" : null
-    ].filter(Boolean).join("；");
 
     a.push({
       id:"TO_ACTION",
@@ -506,33 +574,62 @@ function migrateLegacyPending(state){
   }
 }
 
+// Project award tracking and active status helpers
+function ensureProjectLastAward(state){
+  if (!state.projectLastAward) state.projectLastAward = { national: null, provincial: null };
+}
+
+function isProjectActive(state, tier){
+  // Treat an awarded project as active for 5 years.
+  ensureProjectLastAward(state);
+  const last = state.projectLastAward?.[tier];
+  if (typeof last !== "number"){
+    // Back-compat: if old saves only have counts, assume active when count>0
+    if (tier === "national") return (state.results?.national || 0) >= 1;
+    if (tier === "provincial") return (state.results?.provincial || 0) >= 1;
+    return false;
+  }
+  return (state.time.year - last) < 5;
+}
+
 function submitProject(state, projectId){
   const proj = getProjectById(projectId);
+  function markFixedHandled(status){
+    state.fixedDone = true;
+    state.fixedChoices = state.fixedChoices || {};
+    state.fixedChoices[`apply_${projectId}`] = status ?? true;
+  }
   if (!proj){
     logPush(state, "项目配置缺失，无法提交。");
+    markFixedHandled("config_missing");
     return;
   }
 
   migrateLegacyPending(state);
   ensurePendingProjects(state);
+  ensureProjectLastAward(state);
 
   // Term gates keep demo rules
   if (projectId === "national_nssfc" && state.time.term !== 1){
     logPush(state, "国家项目只允许在寒假提交。");
+    markFixedHandled("term_gate");
     return;
   }
   if (projectId === "provincial" && state.time.term !== 3){
     logPush(state, "省部级项目只允许在暑假提交。");
+    markFixedHandled("term_gate");
     return;
   }
 
-  // Already succeeded
-  if (proj.tier === "national" && state.results.national >= 1){
-    logPush(state, "你已经有国家项目了，本次不再申请。");
+  // Already succeeded (projects expire after 5 years; allow re-apply after expiry)
+  if (proj.tier === "national" && isProjectActive(state, "national")){
+    logPush(state, "你已有在有效期内的国家项目（5年），本次不再申请。")
+    markFixedHandled("already_has");
     return;
   }
-  if (proj.tier === "provincial" && state.results.provincial >= 1){
-    logPush(state, "你已经有省部级项目了，本次不再申请。");
+  if (proj.tier === "provincial" && isProjectActive(state, "provincial")){
+    logPush(state, "你已有在有效期内的省部级项目（5年），本次不再申请。")
+    markFixedHandled("already_has");
     return;
   }
 
@@ -540,10 +637,12 @@ function submitProject(state, projectId){
   if (projectId === "provincial"){
     if (state.pendingProjects.national_nssfc || state.pending?.national){
       logPush(state, "国家项目结果尚未公布，暂时无法改申省部级项目。");
+      markFixedHandled("blocked_pending_other");
       return;
     }
-    if (state.results.national >= 1){
-      logPush(state, "你已有国家项目，本次不再申请省部级项目。");
+    if (isProjectActive(state, "national")){
+      logPush(state, "你已有在有效期内的国家项目（5年），本次不再申请省部级项目。");
+      markFixedHandled("already_has");
       return;
     }
   }
@@ -552,6 +651,7 @@ function submitProject(state, projectId){
   if (state.pendingProjects[projectId]){
     if (projectId === "national_nssfc") logPush(state, "国家项目已提交，等待暑假公布结果。");
     else logPush(state, "省部级项目已提交，等待公布结果。");
+    markFixedHandled("already_pending");
     return;
   }
 
@@ -571,7 +671,8 @@ function submitProject(state, projectId){
     if (delta < 0) costObj[stat] = (costObj[stat] ?? 0) + Math.abs(delta);
   }
   if (!canAfford(state, costObj)){
-    logPush(state, "状态不足，无法申请该项目。");
+    logPush(state, `无法申请该项目：${formatInsufficient(state, costObj)}。`);
+    markFixedHandled("insufficient"); // 关键：避免卡死
     return;
   }
 
@@ -588,9 +689,7 @@ function submitProject(state, projectId){
 
   logPush(state, effectSummary(before, state.stats));
 
-  state.fixedDone = true;
-  state.fixedChoices = state.fixedChoices || {};
-  state.fixedChoices[`apply_${projectId}`] = true;
+  markFixedHandled(true);
 }
 
 function resolveProjectIfDue(state, projectId, proj){
@@ -627,6 +726,11 @@ function resolveProjectIfDue(state, projectId, proj){
         ? [{ kind:"result", key:"national", delta:1 }]
         : [{ kind:"result", key:"provincial", delta:1 }]);
     applyEffects(state, onSuccess, 1);
+
+    // Track award year for expiry logic
+    ensureProjectLastAward(state);
+    if (projectId === "national_nssfc") state.projectLastAward.national = state.time.year;
+    if (projectId === "provincial") state.projectLastAward.provincial = state.time.year;
 
     if (projectId === "national_nssfc") logPush(state, "国家项目：立项成功（国家项目+1）。");
     else logPush(state, "省部级项目：立项成功（省部级+1）。");
@@ -698,6 +802,79 @@ function yearEndHiddenTighten(state){
     logPush(state, "（制度变化）考核口径发生变化。");
     return;
   }
+}
+
+function ensureCareerHistory(state){
+  if (!state.careerHistory) state.careerHistory = [];
+}
+
+function pushYearRecord(state, extra = {}){
+  ensureCareerHistory(state);
+  state.careerHistory.push({
+    year: state.time.year,
+    teachingThisYear: state.teachingThisYear,
+    results: deepClone(state.results),
+    req: deepClone(state.req),
+    stats: deepClone(state.stats),
+    ...extra
+  });
+}
+
+function yearEndSummaryLine(state, evalRes){
+  const teach = `${state.teachingThisYear}/${state.req.teachPerYear}`;
+  const qual = `${state.results.qualifiedPapers}/${state.req.paperNeed}`;
+  const topNeed = state.req.topExtra > 0 ? `，顶刊${state.results.topPapers}/1` : "";
+  const need = state.req.projectNeed ?? 1;
+  const got = (state.results.national || 0) + (state.results.provincial || 0);
+  const proj = state.req.projectMode === "either"
+    ? `${got}/${need}`
+    : `${state.results.national}/${need}`;
+  return `年度总结：教学${teach}，论文${qual}${topNeed}，项目${proj}。`;
+}
+
+function runSummaryLinesFromHistory(state){
+  const hist = Array.isArray(state.careerHistory) ? state.careerHistory : [];
+  const years = hist.length;
+
+  // Compute final pass/fail using same criteria as end-of-game evaluation
+  const evalRes = evaluate(state);
+  const okAll =
+    evalRes.teachOk &&
+    evalRes.paperOk &&
+    evalRes.projectOk &&
+    evalRes.topOk &&
+    evalRes.leaderOk;
+
+  const totals = hist.reduce((acc, y) => {
+    acc.teaching += Number(y.teachingThisYear || 0);
+    acc.qualifiedPapers += Number(y.results?.qualifiedPapers || 0);
+    acc.topPapers += Number(y.results?.topPapers || 0);
+    acc.national += Number(y.results?.national || 0);
+    acc.provincial += Number(y.results?.provincial || 0);
+    return acc;
+  }, { teaching:0, qualifiedPapers:0, topPapers:0, national:0, provincial:0 });
+
+  const lines = [];
+  lines.push(`聘期总结：共经历${years}年。`);
+  // Insert pass/fail outcome at the top of summary section
+  lines.push(okAll ? "恭喜！获得长聘教职！" : "人事处打来电话，再找个新工作吧");
+  lines.push(`累计教学（每年课次数合计）：${totals.teaching}`);
+  lines.push(`累计合格论文：${totals.qualifiedPapers}（其中顶刊：${totals.topPapers}）`);
+  lines.push(`累计项目：国家${totals.national}，省部级${totals.provincial}`);
+
+  if (state.hidden?.reformTriggered){
+    lines.push("关键节点：第5年末触发‘准长聘制再战6年’（成果清零、考核翻倍）。");
+  }
+  const topTighten = Number(state.hidden?.topTightenCount || 0);
+  const natTighten = !!state.hidden?.nationalTightenDone;
+  if (topTighten > 0 || natTighten){
+    const t = [];
+    if (topTighten > 0) t.push(`顶刊额外要求触发${topTighten}次`);
+    if (natTighten) t.push("项目口径改为‘必须国家项目’");
+    lines.push(`制度变化：${t.join("；")}。`);
+  }
+
+  return lines;
 }
 
 /** ======= evaluation ======= */
@@ -821,7 +998,7 @@ export async function dispatch(prevState, action){
         }
 
         if (!canAfford(state, finalCost)){
-          logPush(state, "状态不足，无法执行该固定事件。");
+          logPush(state, `无法执行该固定事件：${formatInsufficient(state, finalCost)}。`);
           return state;
         }
         spend(state, finalCost);
@@ -899,6 +1076,7 @@ export async function dispatch(prevState, action){
       state.randomSeenRun = {};
       state.randomSeenTerm = {};
       state.pendingProjects = {};
+      state.projectLastAward = { national: null, provincial: null };
       state.fixedDone = false;
       state.fixedChoices = {};
       state.stats.time = timeResetValue();
@@ -913,18 +1091,19 @@ export async function dispatch(prevState, action){
       state.screen = "event";
       // resolve national if due at summer event start
       resolveDueProjects(state);
+      autoCompleteProjectFixedIfNotNeeded(state);
       return state;
     }
 
     case "GO_ACTION": {
       if (state.time.phase !== "event") return state;
 
-      const needFixed = hasFixedPanelForTerm(state.time.term);
-      if (needFixed && !state.fixedDone){
+      const { mustDoFixed, mustClearRandom } = eventStageLeaveInfo(state);
+      if (mustDoFixed){
         logPush(state, "请先处理本学期固定事件面板。");
         return state;
       }
-      if (state.randomQuota > 0){
+      if (mustClearRandom){
         logPush(state, `还有${state.randomQuota}个随机事件未处理，需全部触发后才能进入行动阶段。`);
         return state;
       }
@@ -937,12 +1116,12 @@ export async function dispatch(prevState, action){
 
     case "BACK_MAIN": {
       if (state.screen === "event"){
-        const needFixed = hasFixedPanelForTerm(state.time.term);
-        if (needFixed && !state.fixedDone){
+        const { mustDoFixed, mustClearRandom } = eventStageLeaveInfo(state);
+        if (mustDoFixed){
           logPush(state, "请先处理本学期固定事件面板。");
           return state;
         }
-        if (state.randomQuota > 0){
+        if (mustClearRandom){
           logPush(state, `还有${state.randomQuota}个随机事件未处理，需全部触发后才能离开事件阶段。`);
           return state;
         }
@@ -1035,12 +1214,12 @@ export async function dispatch(prevState, action){
     case "TO_ACTION": {
       if (state.screen !== "event") return state;
 
-      const needFixed = hasFixedPanelForTerm(state.time.term);
-      if (needFixed && !state.fixedDone){
+      const { mustDoFixed, mustClearRandom } = eventStageLeaveInfo(state);
+      if (mustDoFixed){
         logPush(state, "请先处理本学期固定事件面板。");
         return state;
       }
-      if (state.randomQuota > 0){
+      if (mustClearRandom){
         logPush(state, `还有${state.randomQuota}个随机事件未处理，需全部触发后才能进入行动阶段。`);
         return state;
       }
@@ -1056,7 +1235,7 @@ export async function dispatch(prevState, action){
       const cfg = actionCfg("WRITE_PAPER");
       const cost = cfg?.cost ?? { mood:10, time:20, energy:20 };
       if (!canAfford(state, cost)){
-        logPush(state, "状态不足，无法写论文。");
+        logPush(state, `无法写论文：${formatInsufficient(state, cost)}。`);
         return state;
       }
       spend(state, cost);
@@ -1089,15 +1268,16 @@ export async function dispatch(prevState, action){
         return state;
       }
       if (p.published || p.stage !== "draft"){
-        logPush(state, "所选论文不可提升（需要是未发表且处于草稿 draft 状态）。");
+        logPush(state, "所选论文不可提升（需要未发表且处于草稿状态）。");
         return state;
       }
-      if (!canAfford(state, { inspiration:50 })){
-        logPush(state, "灵感不足，无法提升论文。");
+      const upCost = { inspiration: 50 };
+      if (!canAfford(state, upCost)){
+        logPush(state, `无法提升论文：${formatInsufficient(state, upCost)}。`);
         return state;
       }
-      spend(state, { inspiration:50 });
-
+      spend(state, upCost);
+      
       const order = ["general","cssci","first","top"];
       const idx = order.indexOf(p.level);
       p.level = order[Math.min(order.length-1, idx+1)];
@@ -1115,7 +1295,7 @@ export async function dispatch(prevState, action){
         return state;
       }
       if (p.published || p.stage !== "draft"){
-        logPush(state, "所选论文不可投稿（需要是未发表且处于草稿 draft 状态）。");
+        logPush(state, "所选论文不可投稿（需要未发表且处于草稿状态）。");
         return state;
       }
       p.attemptsThisTurn = p.attemptsThisTurn ?? 0;
@@ -1163,13 +1343,13 @@ export async function dispatch(prevState, action){
       const cfg = actionCfg("PREP_CLASS");
       const cost = cfg?.cost ?? { mood:9, time:9 };
       if (!canAfford(state, cost)){
-        logPush(state, "状态不足，无法备课。");
+        logPush(state, `无法备课：${formatInsufficient(state, cost)}。`);
         return state;
       }
       spend(state, cost);
       const gain = cfg?.gain ?? { mood:3 };
       for (const [k,v] of Object.entries(gain)) applyDelta(state, k, +v);
-      logPush(state, `备课完成：${Object.entries(gain).map(([k,v])=>`${k}+${v}`).join("，")}。`);
+      logPush(state, `备课完成：${Object.entries(gain).map(([k,v])=>`${labelStat(k)}+${v}`).join("，")}。`);
       return state;
     }
 
@@ -1178,13 +1358,13 @@ export async function dispatch(prevState, action){
       const cfg = actionCfg("SLACK_OFF");
       const cost = cfg?.cost ?? { time:10 };
       if (!canAfford(state, cost)){
-        logPush(state, "时间不足，无法摸鱼。");
+        logPush(state, `无法摸鱼：${formatInsufficient(state, cost)}。`);
         return state;
       }
       spend(state, cost);
       const gain = cfg?.gain ?? { energy:10, mood:5, inspiration:5 };
       for (const [k,v] of Object.entries(gain)) applyDelta(state, k, +v);
-      logPush(state, `摸鱼：短暂回血（${Object.entries(gain).map(([k,v])=>`${k}+${v}`).join("，")}）。`);
+      logPush(state, `摸鱼：短暂回血（${Object.entries(gain).map(([k,v])=>`${labelStat(k)}+${v}`).join("，")}）。`);
       return state;
     }
 
@@ -1229,6 +1409,7 @@ export async function dispatch(prevState, action){
         state.fixedChoices = {};
         state.randomQuota = quotaForTerm(state.time.term);
         state.randomSeenTerm = {};
+        autoCompleteProjectFixedIfNotNeeded(state);
         state.screen = "main";
         return state;
       }
@@ -1247,6 +1428,9 @@ export async function dispatch(prevState, action){
         }
       }
 
+      // === persist year record BEFORE potential reform clears achievements ===
+      pushYearRecord(state, { note: "preReformSnapshot" });
+      
       // hidden reform at end of year 5 (do not disclose probability)
       const reformed = year5HiddenReform(state);
 
@@ -1258,6 +1442,7 @@ export async function dispatch(prevState, action){
 
       // evaluate year: teaching requirement is per year
       const evalRes = evaluate(state);
+      logPush(state, yearEndSummaryLine(state, evalRes));
 
       // if last year ended, decide game
       if (state.time.year >= state.req.maxYear) {
@@ -1271,7 +1456,7 @@ export async function dispatch(prevState, action){
           evalRes.leaderOk;
 
         if (okAll) {
-          logPush(state, "通关：获得长聘教职！");
+          logPush(state, "恭喜！获得长聘教职！");
         } else {
           const reasons = [];
 
@@ -1307,13 +1492,16 @@ export async function dispatch(prevState, action){
             reasons.push(`行政未达标：领导满意度 ${state.results.leader}/21（需要 > 20）`);
           }
 
-          logPush(state, "失败：未能通过非升即走考核。");
+          logPush(state, "人事处打来电话，再找个新工作吧");
           if (reasons.length) {
             logPush(state, "失败原因：");
             for (const r of reasons) logPush(state, `- ${r}`);
           }
         }
-
+        logPush(state, "=== 聘期总结 ===");
+        for (const line of runSummaryLinesFromHistory(state)){
+          logPush(state, line);
+        }
         return state;
       }
 
