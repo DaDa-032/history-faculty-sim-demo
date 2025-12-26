@@ -1,43 +1,77 @@
 import { createInitialState } from "../core/state.js";
-import { loadContent, dispatch, getViewModel, termName, levelName } from "../core/engine.js";
+import { loadContent, dispatch, getViewModel, levelName } from "../core/engine.js";
 
 let state = createInitialState();
 const app = document.getElementById("app");
 
 function h(str){ return str; }
-
-function renderPending(vm){
-  const parts = [];
-  const pend = vm.pendingProjects ?? vm.pending ?? {};
-
-  // New IDs (Step E)
-  if (pend.national_nssfc) parts.push("国家项目：等待暑假公布");
-  if (pend.provincial) parts.push("省部级项目：等待暑假行动阶段公布");
-
-  // Legacy keys (backward compatibility)
-  if (pend.national) parts.push("国家项目：等待暑假公布");
-
-  if (parts.length===0) return "";
-  // de-dup
-  const uniq = Array.from(new Set(parts));
-  return `<div class="muted" style="margin-top:6px">${uniq.join("；")}</div>`;
+function phaseLabel(phase){
+  return ({ event: "事件阶段", action: "行动阶段" }[phase] ?? phase);
+}
+function findLastLine(lines, startsWith){
+  for (let i = lines.length - 1; i >= 0; i--){
+    const s = String(lines[i] ?? "");
+    if (s.startsWith(startsWith)) return s;
+  }
+  return "";
 }
 
-// Pending text as part of the results panel (should not look like secondary/muted text)
-function renderPendingInResults(vm){
-  const parts = [];
-  const pend = vm.pendingProjects ?? vm.pending ?? {};
+function extractRunSummaryLines(lines){
+  const out = [];
+  const idx = lines.findIndex(x => String(x).includes("=== 聘期总结 ==="));
+  if (idx < 0) return out;
+  for (let i = idx + 1; i < lines.length; i++){
+    const s = String(lines[i] ?? "");
+    if (!s) continue;
+    out.push(s);
+  }
+  return out;
+}
 
-  // New IDs (Step E)
+function renderYearSummaryPanel(vm){
+  const lines = Array.isArray(vm.log) ? vm.log : [];
+  const last = findLastLine(lines, "年度总结：");
+  if (!last) return "";
+  return `
+    <div class="panel">
+      <div class="muted">年终总结</div>
+      <div class="hr"></div>
+      <div>${highlightLogLine(last)}</div>
+    </div>
+  `;
+}
+
+function renderRunSummaryPanel(vm){
+  const lines = Array.isArray(vm.log) ? vm.log : [];
+  const run = extractRunSummaryLines(lines);
+  if (!run.length) return "";
+  return `
+    <div class="panel">
+      <div class="muted">聘期总结</div>
+      <div class="hr"></div>
+      <div class="log">${run.map(x => `<div>${highlightLogLine(x)}</div>`).join("")}</div>
+    </div>
+  `;
+}
+
+function buildPendingLines(vm){
+  const pend = vm.pendingProjects ?? vm.pending ?? {};
+  const parts = [];
+
+  // New IDs
   if (pend.national_nssfc) parts.push("国家项目：等待暑假公布");
   if (pend.provincial) parts.push("省部级项目：等待暑假行动阶段公布");
 
-  // Legacy keys (backward compatibility)
+  // Legacy keys
   if (pend.national) parts.push("国家项目：等待暑假公布");
 
-  if (parts.length===0) return "";
-  const uniq = Array.from(new Set(parts));
-  return `<div style="margin-top:6px">${uniq.join("；")}</div>`;
+  return Array.from(new Set(parts));
+}
+
+function renderPending(vm, { muted = true } = {}){
+  const lines = buildPendingLines(vm);
+  if (lines.length === 0) return "";
+  return `<div ${muted ? 'class="muted"' : ""} style="margin-top:6px">${lines.join("；")}</div>`;
 }
 
 function statGrid(vm){
@@ -64,13 +98,13 @@ function progressGrid(vm){
           <div>顶刊：<b>${r.topPapers}</b></div>
           <div>国家项目：<b>${r.national}</b>；省部级：<b>${r.provincial}</b></div>
           ${vm.req.topExtra>0 ? `<div><span class="tag">顶刊要求已触发</span></div>` : ``}
-          ${renderPendingInResults(vm)}
+          ${renderPending(vm, { muted:false })}
         </div>
         <div>
           <div class="sectionTitle">回合</div>
           <div class="hr"></div>
           <div>第 <b>${vm.year}</b> 年 · <b>${vm.term}</b></div>
-          <div>阶段：<b>${vm.phase}</b></div>
+          <div>阶段：<b>${phaseLabel(vm.phase)}</b></div>
           <div>随机事件剩余：<b>${vm.randomQuota}</b></div>
           <div>本学年授课数：<b>${vm.teachingThisYear}</b></div>
         </div>
@@ -180,10 +214,11 @@ function renderMain(vm){
 
   return h(`
     <h2>办公系统</h2>
-    <div class="muted">第${vm.year}年·${vm.term}｜阶段：${vm.phase}</div>
+    <div class="muted">第${vm.year}年·${vm.term}｜阶段：${phaseLabel(vm.phase)}</div>
 
     ${statGrid(vm)}
     ${progressGrid(vm)}
+    ${renderYearSummaryPanel(vm)}
 
     <div class="panel">
       <div class="muted">菜单</div>
@@ -267,6 +302,7 @@ function renderEvent(vm){
     <h2>事件阶段：第${vm.year}年·${vm.term}</h2>
     ${statGrid(vm)}
     ${progressGrid(vm)}
+    ${renderYearSummaryPanel(vm)}
 
     <div class="panel">
       <div class="muted">固定事件</div>
@@ -313,7 +349,7 @@ function renderAction(vm){
 
 function renderPapers(vm){
   const selectable = vm.papers
-    .filter(p => !p.published && p.stage === "draft")
+    .filter(p => !p.published && (p.stage === "draft" || p.stage === "草稿"))
     .slice()
     .reverse();
 
@@ -322,7 +358,7 @@ function renderPapers(vm){
   const rows = vm.papers.slice().reverse().map(p=>{
     return `<tr>
       <td>${p.id}</td>
-      <td>${p.stage}</td>
+      <td>${p.stage === "draft" ? "草稿" : (p.stage === "submitted" ? "已投稿" : p.stage)}</td>
       <td>${levelName(p.level)}</td>
       <td>${p.published ? "是" : "否"}</td>
       <td>${p.attemptsThisTurn ?? 0}</td>
@@ -332,7 +368,7 @@ function renderPapers(vm){
   return h(`
     <h2>Word（论文列表）</h2>
     <div class="panel">
-      <div class="muted">选择操作对象（仅显示“未发表且处于草稿 draft”的论文）</div>
+      <div class="muted">选择操作对象（仅显示“未发表且处于草稿状态”的论文）</div>
       <div style="margin-top:6px; display:flex; gap:8px; align-items:center; flex-wrap:wrap;">
         <select id="paperSelect" style="padding:8px;border:1px solid #d0d5dd;border-radius:8px;min-width:220px;">
           ${selectable.length===0
@@ -383,12 +419,16 @@ function renderRequirements(vm){
 function renderEnd(vm){
   return h(`
     <h2>结局</h2>
+
+    ${renderRunSummaryPanel(vm)}
+
     <div class="panel">
-      <div class="muted">请查看日志中的最终判定信息。</div>
+      <div class="muted">你可以在下方日志中查看完整过程。</div>
       <div class="btns">
         <button id="btnRestart">再来一局</button>
       </div>
     </div>
+
     ${renderLog(vm)}
   `);
 }
@@ -398,7 +438,8 @@ function render(){
 
   // UI skin hook: OA (Notion + 压迫感)
   // Allows CSS to style by screen/phase without changing game logic.
-  app.className = `oa skin-notion phase-${vm.phase} screen-${vm.screen}`;
+  const screenClass = (vm.screen === "end") ? "main" : vm.screen;
+  app.className = `oa skin-notion phase-${vm.phase} screen-${screenClass}`;
 
   let html = "";
   if (vm.screen === "intro") html = renderIntro(vm);
