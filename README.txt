@@ -109,7 +109,8 @@ https://dada-032.github.io/history-faculty-sim-demo/
 
 ## 👤 作者
 
-- 设计 / 开发：Dada-032 
+- 设计 / 开发：Dada-032、ChatGPT-5.2
+- *部分代码，以及这个README，由AI生成*
 - 项目定位：实验性游戏 × 数字人文 × 制度模拟
 
 欢迎试玩、反馈，或单纯围观。
